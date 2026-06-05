@@ -715,57 +715,18 @@
     }
 
     .thinking {
-      display: block;
-      margin-bottom: 10px;
-    }
-
-    .thinking-toggle {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       color: #4f5965;
       font-weight: 700;
+      margin-bottom: 8px;
       border-bottom: 1px solid #4f5965;
-      background: transparent;
-      padding: 0;
       line-height: 1.2;
-      cursor: pointer;
     }
 
-    .thinking-toggle i:first-child {
+    .thinking i {
       color: #ffb21a;
-    }
-
-    .thinking-toggle .thinking-arrow {
-      color: var(--muted);
-      font-size: 12px;
-      transition: transform .16s ease;
-    }
-
-    .thinking.open .thinking-arrow {
-      transform: rotate(180deg);
-    }
-
-    .thinking-content {
-      display: none;
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-left: 3px solid var(--line);
-      background: var(--panel);
-      color: #5d6672;
-      border-radius: 6px;
-      white-space: pre-wrap;
-      line-height: 1.65;
-      font-size: 14px;
-    }
-
-    .thinking.open .thinking-content {
-      display: block;
-    }
-
-    .answer-content {
-      display: block;
-      margin-top: 8px;
     }
 
     .meta {
@@ -2121,15 +2082,7 @@
       el.chat.innerHTML = messages.map((msg, index) => {
         const roleClass = msg.role === "user" ? "user" : "assistant";
         const content = msg.role === "assistant" && msg.thinkingSeconds !== undefined
-          ? `<div class="thinking" data-thinking-box="${index}">
-              <button class="thinking-toggle" data-thinking-toggle="${index}" type="button">
-                <i class="fa-regular fa-lightbulb"></i>
-                思考了 ${msg.thinkingSeconds.toFixed(1)}s
-                <i class="fa-solid fa-chevron-down thinking-arrow"></i>
-              </button>
-              <div class="thinking-content">${escapeHtml(msg.reasoning || "暂无可展开的思考内容。")}</div>
-            </div>
-            <div class="answer-content">${escapeHtml(msg.content)}</div>`
+          ? `<div class="thinking"><i class="fa-regular fa-lightbulb"></i>思考了 ${msg.thinkingSeconds.toFixed(1)}s</div>${escapeHtml(msg.content)}`
           : escapeHtml(msg.content);
         const tokens = estimateTokens(msg.content);
         const words = wordCount(msg.content);
@@ -2771,7 +2724,7 @@
       }
       convo.draft = "";
       maybeUpdateAutoTitle(convo, cleanText);
-      const assistantMsg = { role: "assistant", content: "", reasoning: "", time: nowTime(), model: state.settings.model };
+      const assistantMsg = { role: "assistant", content: "", time: nowTime(), model: state.settings.model };
       convo.messages.push(assistantMsg);
       convo.updatedAt = Date.now();
       save();
@@ -2818,7 +2771,6 @@
         if (!response.body) {
           const json = await response.json();
           assistantMsg.content = json.choices?.[0]?.message?.content || "";
-          assistantMsg.reasoning = json.choices?.[0]?.message?.reasoning_content || "";
         } else {
           await readStream(response, assistantMsg, convo);
         }
@@ -2879,17 +2831,9 @@
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
-            const reasoningDelta =
-              parsed.choices?.[0]?.delta?.reasoning_content ||
-              parsed.choices?.[0]?.message?.reasoning_content ||
-              "";
-            const delta =
-              parsed.choices?.[0]?.delta?.content ||
-              parsed.choices?.[0]?.message?.content ||
-              "";
-            if (!delta && !reasoningDelta) continue;
-            if (reasoningDelta) assistantMsg.reasoning = (assistantMsg.reasoning || "") + reasoningDelta;
-            if (delta) assistantMsg.content += delta;
+            const delta = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
+            if (!delta) continue;
+            assistantMsg.content += delta;
             save();
             renderMessages();
             renderHeaderAndStats();
@@ -3056,12 +3000,6 @@
         button.addEventListener("click", () => openNoteFullscreen(button.dataset.expandNote));
       });
       el.chat.addEventListener("click", event => {
-        const thinkingBtn = event.target.closest("[data-thinking-toggle]");
-        if (thinkingBtn) {
-          thinkingBtn.closest(".thinking")?.classList.toggle("open");
-          return;
-        }
-
         const btn = event.target.closest("[data-action]");
         if (!btn) return;
         const index = Number(btn.dataset.index);
