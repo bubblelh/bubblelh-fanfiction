@@ -548,6 +548,30 @@
       padding: 0 11px;
     }
 
+    .password-field {
+      position: relative;
+    }
+
+    .password-field .field {
+      padding-right: 42px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translateY(-50%);
+      border-radius: 6px;
+      color: var(--muted);
+    }
+
+    .password-toggle:hover {
+      color: var(--text);
+      background: var(--panel);
+    }
+
     .range-field {
       width: 100%;
       accent-color: var(--accent);
@@ -1691,14 +1715,24 @@
 
         <div class="setting-group">
           <div class="setting-label">API Key</div>
-          <input class="field" id="apiKeyInput" type="password" placeholder="仅本地直连测试，不建议部署使用">
+          <div class="password-field">
+            <input class="field" id="apiKeyInput" type="password" placeholder="仅本地直连测试，不建议部署使用">
+            <button class="icon-btn password-toggle" data-password-toggle="apiKeyInput" title="显示/隐藏 API Key">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
         </div>
 
         <div class="setting-group">
           <div class="setting-label">
             <span class="label-left">Worker Access Token<button class="info-btn" data-info="可选。与 Cloudflare Worker 里的 ACCESS_TOKEN Secret 对应，用来防止别人直接调用你的 Worker 消耗额度。" title="说明"><i class="fa-solid fa-info"></i></button></span>
           </div>
-          <input class="field" id="workerTokenInput" type="password" placeholder="部署 Worker 后建议填写">
+          <div class="password-field">
+            <input class="field" id="workerTokenInput" type="password" placeholder="部署 Worker 后建议填写">
+            <button class="icon-btn password-toggle" data-password-toggle="workerTokenInput" title="显示/隐藏 Worker Access Token">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
         </div>
 
         <div class="setting-group">
@@ -1924,6 +1958,7 @@
       endpointInput: document.getElementById("endpointInput"),
       apiKeyInput: document.getElementById("apiKeyInput"),
       workerTokenInput: document.getElementById("workerTokenInput"),
+      passwordToggles: Array.from(document.querySelectorAll("[data-password-toggle]")),
       cloudSyncInput: document.getElementById("cloudSyncInput"),
       cloudPullBtn: document.getElementById("cloudPullBtn"),
       cloudPushBtn: document.getElementById("cloudPushBtn"),
@@ -3912,6 +3947,16 @@
       });
       el.contextPreviewBtn.addEventListener("click", showContextPreview);
       el.modeButtons.forEach(btn => btn.addEventListener("click", () => setMode(btn.dataset.mode)));
+      el.passwordToggles.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const input = document.getElementById(btn.dataset.passwordToggle);
+          if (!input) return;
+          const visible = input.type === "text";
+          input.type = visible ? "password" : "text";
+          btn.innerHTML = `<i class="fa-regular ${visible ? "fa-eye" : "fa-eye-slash"}"></i>`;
+          btn.title = visible ? "显示密码" : "隐藏密码";
+        });
+      });
       [
         ["endpointInput", "endpoint"],
         ["apiKeyInput", "apiKey"],
