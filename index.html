@@ -2027,8 +2027,8 @@
 
     function modelLabel(model) {
       const map = {
-        "deepseek-chat": "DeepSeek Chat（将于 2026/07/24 弃用）",
-        "deepseek-reasoner": "DeepSeek Reasoner（将于 2026/07/24 弃用）",
+        "deepseek-chat": "DeepSeek Chat (2026-07-24)",
+        "deepseek-reasoner": "DeepSeek Reasoner (2026-07-24)",
         "deepseek-v4-flash": "DeepSeek V4 Flash",
         "deepseek-v4-pro": "DeepSeek V4 Pro"
       };
@@ -2286,7 +2286,7 @@
     function renderHeaderAndStats() {
       const convo = getCurrentConvo();
       el.titleText.textContent = convo?.title || "新对话";
-      el.modelPill.innerHTML = `<i class="fa-solid fa-circle-nodes"></i>${escapeHtml(modelLabel(state.settings.model))}`;
+      el.modelPill.textContent = modelLabel(state.settings.model);
       const stats = getStats(convo);
       el.statsPill.innerHTML = `<i class="fa-solid fa-arrow-up"></i>${stats.percent}%`;
       el.contextMeter.style.width = `${Math.min(stats.percent, 100)}%`;
