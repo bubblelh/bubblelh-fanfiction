@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bubble.lh">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
   <title>Bubble.lh</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
@@ -73,6 +79,9 @@
       display: flex;
       flex-direction: column;
       min-width: 0;
+      min-height: 0;
+      height: 100vh;
+      overflow: hidden;
       transition: transform .22s ease;
       z-index: 20;
     }
@@ -167,7 +176,9 @@
       flex: 1;
       min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
       padding: 14px;
+      scrollbar-gutter: stable;
     }
 
     .side-panel.active {
@@ -199,6 +210,11 @@
     .ghost-btn {
       color: #4f5965;
       background: var(--panel);
+    }
+
+    .ghost-btn.active {
+      background: #eef7ff;
+      color: var(--accent-dark);
     }
 
     .danger-btn {
@@ -714,6 +730,13 @@
       margin-top: 8px;
     }
 
+    .message.search-hit .bubble {
+      outline: 2px solid #ffd37a;
+      outline-offset: 4px;
+      border-radius: var(--radius);
+      background: #fff9ed;
+    }
+
     .thinking {
       display: inline-flex;
       align-items: center;
@@ -727,6 +750,43 @@
 
     .thinking i {
       color: #ffb21a;
+    }
+
+    .thinking-details {
+      margin-bottom: 10px;
+      color: #4f5965;
+    }
+
+    .thinking-details summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      cursor: pointer;
+      font-weight: 700;
+      border-bottom: 1px solid #4f5965;
+      line-height: 1.2;
+      list-style: none;
+    }
+
+    .thinking-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .thinking-details summary i {
+      color: #ffb21a;
+    }
+
+    .thinking-content {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-left: 2px solid #ffd37a;
+      background: #fff9ed;
+      border-radius: 6px;
+      color: #5d6672;
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
     }
 
     .meta {
@@ -958,6 +1018,102 @@
       margin-top: 12px;
     }
 
+    .context-preview {
+      display: grid;
+      gap: 12px;
+    }
+
+    .context-preview-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .context-preview-stat {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .context-preview-stat strong {
+      display: block;
+      color: var(--text);
+      font-size: 16px;
+      margin-top: 3px;
+    }
+
+    .context-preview-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .context-preview-item {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: var(--surface);
+    }
+
+    .context-preview-role {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .context-preview-text {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      max-height: 180px;
+      overflow: auto;
+    }
+
+    .message-search-box {
+      display: grid;
+      gap: 10px;
+    }
+
+    .message-search-results {
+      display: grid;
+      gap: 8px;
+      max-height: min(52vh, 460px);
+      overflow: auto;
+    }
+
+    .message-search-result {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 10px 12px;
+      color: var(--text);
+    }
+
+    .message-search-result:hover {
+      background: var(--panel);
+    }
+
+    .message-search-snippet {
+      margin-top: 5px;
+      color: #4f5965;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .message-search-snippet mark {
+      background: #fff0b8;
+      color: inherit;
+      padding: 0 2px;
+      border-radius: 3px;
+    }
+
     .meter {
       height: 8px;
       background: var(--panel-strong);
@@ -1009,6 +1165,11 @@
         transform: translateX(0);
       }
 
+      body.sidebar-open .sidebar-backdrop {
+        background: rgba(15, 23, 42, .18);
+        pointer-events: auto;
+      }
+
       .chat {
         padding: 22px 16px 24px;
       }
@@ -1024,6 +1185,14 @@
       .bubble {
         font-size: 16px;
         padding: 13px 15px;
+      }
+
+      .context-preview-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .context-preview-text {
+        max-height: 140px;
       }
 
       .tools {
@@ -1062,16 +1231,40 @@
         grid-template-rows: calc(56px + env(safe-area-inset-top)) 1fr auto;
       }
 
+      .sidebar {
+        width: min(380px, 92vw);
+      }
+
+      .sidebar-head {
+        height: calc(56px + env(safe-area-inset-top));
+        padding: env(safe-area-inset-top) 14px 0;
+      }
+
+      .side-tabs {
+        padding: 10px;
+        gap: 3px;
+      }
+
+      .tab-btn {
+        height: 34px;
+        font-size: 12px;
+        gap: 4px;
+      }
+
+      .side-panel {
+        padding: 12px;
+      }
+
       .topbar {
         height: calc(56px + env(safe-area-inset-top));
         padding: env(safe-area-inset-top) 12px 0;
-        gap: 8px;
+        gap: 6px;
       }
 
       .topbar .icon-btn {
-        width: 38px;
-        height: 38px;
-        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        font-size: 17px;
       }
 
       .mobile-only {
@@ -1085,8 +1278,8 @@
       }
 
       .top-title {
-        max-width: 44vw;
-        font-size: 18px;
+        max-width: 46vw;
+        font-size: 17px;
         gap: 4px;
       }
 
@@ -1097,7 +1290,7 @@
       }
 
       .chat {
-        padding: 20px 16px 18px;
+        padding: 18px 14px 16px;
       }
 
       .message.user .message-body {
@@ -1119,28 +1312,30 @@
       }
 
       .composer-wrap {
-        padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
       }
 
       .composer {
         grid-template-columns: 1fr 50px;
-        gap: 8px;
-        padding: 10px;
+        gap: 7px;
+        padding: 9px;
       }
 
       .composer textarea {
-        min-height: 58px;
+        min-height: 54px;
+        max-height: 128px;
         font-size: 16px;
+        line-height: 1.45;
       }
 
       .composer-actions {
         grid-column: 1 / 2;
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 6px;
         overflow-x: auto;
         flex-wrap: nowrap;
-        padding-bottom: 1px;
+        padding: 1px 2px 2px 0;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
       }
@@ -1150,8 +1345,8 @@
       }
 
       .composer-actions .icon-btn {
-        width: 34px;
-        height: 34px;
+        width: 33px;
+        height: 33px;
         flex: 0 0 auto;
       }
 
@@ -1161,32 +1356,55 @@
       }
 
       .status-pill {
-        height: 34px;
+        height: 33px;
         flex: 0 0 auto;
-        padding: 0 10px;
-        font-size: 13px;
+        padding: 0 9px;
+        font-size: 12px;
       }
 
       #statsPill {
-        min-width: 58px;
+        min-width: 54px;
       }
 
       #modePill {
-        min-width: 76px;
+        min-width: 72px;
       }
 
       #modelPill {
-        max-width: 150px;
+        max-width: 132px;
       }
 
       .send-btn {
-        width: 50px;
-        height: 50px;
+        width: 48px;
+        height: 48px;
       }
 
       .footer-note {
         margin-top: 6px;
-        font-size: 12px;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .modal {
+        align-items: flex-end;
+        padding: 10px;
+      }
+
+      .modal-card {
+        width: 100%;
+        max-height: min(88dvh, 720px);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      .modal-card h2 {
+        font-size: 17px;
+      }
+
+      .tool-menu {
+        max-width: calc(100vw - 24px);
+        max-height: min(58dvh, 420px);
+        overflow: auto;
       }
 
       .mobile-scroll-tools {
@@ -1228,11 +1446,11 @@
 
       .mobile-bottom-btn {
         position: fixed;
-        right: 16px;
-        bottom: calc(150px + env(safe-area-inset-bottom));
+        right: 14px;
+        bottom: calc(136px + env(safe-area-inset-bottom));
         z-index: 46;
-        width: 54px;
-        height: 54px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         background: var(--surface);
         color: var(--text);
@@ -1252,6 +1470,35 @@
         opacity: 1;
         pointer-events: auto;
         transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 380px) {
+      .topbar {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      .top-title {
+        max-width: 40vw;
+        font-size: 16px;
+      }
+
+      .composer-actions {
+        gap: 5px;
+      }
+
+      .composer-actions .icon-btn {
+        width: 31px;
+        height: 31px;
+      }
+
+      #statsPill {
+        display: none;
+      }
+
+      #modelPill {
+        max-width: 112px;
       }
     }
 
@@ -1290,7 +1537,10 @@
           <i class="fa-solid fa-magnifying-glass"></i>
           <input id="searchInput" placeholder="搜索标题、消息、收藏">
         </div>
-        <div class="conversation-list" id="conversationList"></div>
+        <button class="ghost-btn" id="archiveFilterBtn" style="width: 100%; margin-top: 8px;">
+          <i class="fa-solid fa-box-archive"></i>查看归档
+        </button>
+        <div class="conversation-list" id="conversationList" style="margin-top: 12px;"></div>
       </section>
 
       <section class="side-panel" id="tab-favorites">
@@ -1338,6 +1588,13 @@
           <div class="note-editor">
             <textarea class="textarea writing-note" id="noteStyle" data-note-key="style" placeholder="文风偏好、不要写什么、称呼习惯"></textarea>
             <div class="note-tools"><span class="note-count" data-count-for="style">0 字</span><button class="note-expand" data-expand-note="style" title="全屏编辑"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button></div>
+          </div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label"><span>叙事规则</span><label class="note-toggle"><input type="checkbox" class="note-context-toggle" data-note-toggle="narrative" checked>带入</label></div>
+          <div class="note-editor">
+            <textarea class="textarea writing-note" id="noteNarrative" data-note-key="narrative" placeholder="叙述视角、节奏、信息揭示方式、章节推进原则"></textarea>
+            <div class="note-tools"><span class="note-count" data-count-for="narrative">0 字</span><button class="note-expand" data-expand-note="narrative" title="全屏编辑"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button></div>
           </div>
         </div>
       </section>
@@ -1416,16 +1673,9 @@
           <textarea class="textarea" id="creativePromptInput" placeholder="只在 Creative 模式自动附加"></textarea>
         </div>
 
-        <div class="setting-group">
-          <div class="setting-label">
-            <span class="label-left">自定义写作指令<button class="info-btn" data-info="每行一个，格式：按钮名称=要插入输入框的提示词。例如：压缩节奏=请把下面内容改得更紧凑。" title="说明"><i class="fa-solid fa-info"></i></button></span>
-          </div>
-          <textarea class="textarea" id="customCommandsInput" placeholder="例：&#10;压缩节奏=请把下面内容改得更紧凑，减少解释，保留关键动作。&#10;增强暧昧=请增强人物之间的张力，不要直白表白。"></textarea>
-        </div>
-
         <div class="row">
-          <button class="ghost-btn" id="exportAllBtn"><i class="fa-solid fa-download"></i>导出全部</button>
-          <button class="ghost-btn" id="importBtn"><i class="fa-solid fa-upload"></i>导入</button>
+          <button class="ghost-btn" id="exportAllBtn"><i class="fa-solid fa-download"></i>导出全部数据</button>
+          <button class="ghost-btn" id="importBtn"><i class="fa-solid fa-upload"></i>导入数据</button>
         </div>
       </section>
     </aside>
@@ -1480,6 +1730,9 @@
             <button class="icon-btn" id="settingsQuickBtn" title="设置">
               <i class="fa-solid fa-gear"></i>
             </button>
+            <button class="icon-btn" id="contextPreviewBtn" title="带入预览">
+              <i class="fa-regular fa-eye"></i>
+            </button>
             <span class="status-pill" id="statsPill"></span>
             <button class="status-pill" id="modePill" title="切换模式"></button>
             <button class="status-pill" id="modelPill" title="切换模型"></button>
@@ -1519,11 +1772,11 @@
         topP: 0.9,
         systemPrompt: "",
         creativePrompt: DEFAULT_CREATIVE_PROMPT,
-        customCommands: "",
         contextLimit: 128000,
         contextMessageLimit: 40
       },
-      search: ""
+      search: "",
+      showArchived: false
     };
 
     let isLoading = false;
@@ -1548,6 +1801,7 @@
       moreTopBtn: document.getElementById("moreTopBtn"),
       newChatBtn: document.getElementById("newChatBtn"),
       searchInput: document.getElementById("searchInput"),
+      archiveFilterBtn: document.getElementById("archiveFilterBtn"),
       conversationList: document.getElementById("conversationList"),
       favoriteList: document.getElementById("favoriteList"),
       conversationSummaryInput: document.getElementById("conversationSummaryInput"),
@@ -1562,6 +1816,7 @@
       modeQuickBtn: document.getElementById("modeQuickBtn"),
       fullscreenInputBtn: document.getElementById("fullscreenInputBtn"),
       settingsQuickBtn: document.getElementById("settingsQuickBtn"),
+      contextPreviewBtn: document.getElementById("contextPreviewBtn"),
       modePill: document.getElementById("modePill"),
       modelPill: document.getElementById("modelPill"),
       statsPill: document.getElementById("statsPill"),
@@ -1576,7 +1831,6 @@
       systemPromptInput: document.getElementById("systemPromptInput"),
       systemPromptCount: document.getElementById("systemPromptCount"),
       creativePromptInput: document.getElementById("creativePromptInput"),
-      customCommandsInput: document.getElementById("customCommandsInput"),
       contextLimitInput: document.getElementById("contextLimitInput"),
       contextMessageLimitInput: document.getElementById("contextMessageLimitInput"),
       contextMessageLimitValue: document.getElementById("contextMessageLimitValue"),
@@ -1660,6 +1914,9 @@
         try {
           const data = JSON.parse(raw);
           state.conversations = Array.isArray(data.conversations) ? data.conversations : [];
+          state.conversations.forEach(convo => {
+            if (!Object.prototype.hasOwnProperty.call(convo, "archived")) convo.archived = false;
+          });
           state.currentId = data.currentId || "";
           state.settings = { ...state.settings, ...(data.settings || {}) };
         } catch (error) {
@@ -1679,6 +1936,7 @@
         model: state.settings.model,
         mode: state.settings.mode,
         favorite: false,
+        archived: false,
         tags: [],
         autoTitle: true,
         aiTitleGenerated: false,
@@ -1688,14 +1946,16 @@
           world: "",
           timeline: "",
           foreshadowing: "",
-          style: ""
+          style: "",
+          narrative: ""
         },
         writingNoteEnabled: {
           characters: true,
           world: true,
           timeline: true,
           foreshadowing: true,
-          style: true
+          style: true,
+          narrative: true
         },
         draft: "",
         messages: []
@@ -1751,7 +2011,6 @@
       el.topPValue.textContent = state.settings.topP;
       el.systemPromptInput.value = state.settings.systemPrompt;
       el.creativePromptInput.value = state.settings.creativePrompt;
-      el.customCommandsInput.value = state.settings.customCommands || "";
       el.contextLimitInput.value = state.settings.contextLimit;
       const limitIndex = contextLimitToSliderIndex(state.settings.contextMessageLimit);
       const normalizedLimit = CONTEXT_MESSAGE_LIMITS[limitIndex];
@@ -1765,11 +2024,13 @@
 
     function ensureWritingNotes(convo) {
       if (!convo.writingNotes) {
-        convo.writingNotes = { characters: "", world: "", timeline: "", foreshadowing: "", style: "" };
+        convo.writingNotes = { characters: "", world: "", timeline: "", foreshadowing: "", style: "", narrative: "" };
       }
+      if (!Object.prototype.hasOwnProperty.call(convo.writingNotes, "narrative")) convo.writingNotes.narrative = "";
       if (!convo.writingNoteEnabled) {
-        convo.writingNoteEnabled = { characters: true, world: true, timeline: true, foreshadowing: true, style: true };
+        convo.writingNoteEnabled = { characters: true, world: true, timeline: true, foreshadowing: true, style: true, narrative: true };
       }
+      if (!Object.prototype.hasOwnProperty.call(convo.writingNoteEnabled, "narrative")) convo.writingNoteEnabled.narrative = true;
       return convo.writingNotes;
     }
 
@@ -1809,7 +2070,8 @@
         world: "世界观设定",
         timeline: "时间线",
         foreshadowing: "伏笔与待回收",
-        style: "文风与禁忌"
+        style: "文风与禁忌",
+        narrative: "叙事规则"
       }[key] || "设定";
     }
 
@@ -1886,7 +2148,8 @@
         ["world", "世界观设定", notes.world],
         ["timeline", "时间线", notes.timeline],
         ["foreshadowing", "伏笔与待回收", notes.foreshadowing],
-        ["style", "文风与禁忌", notes.style]
+        ["style", "文风与禁忌", notes.style],
+        ["narrative", "叙事规则", notes.narrative]
       ].filter(([key]) => enabled[key] !== false).filter(([, , value]) => String(value || "").trim());
       if (!sections.length) return "";
       return "以下是当前对话的写作设定。请优先遵守，但不要机械复述：\n\n" + sections.map(([, title, value]) => `【${title}】\n${value.trim()}`).join("\n\n");
@@ -2003,6 +2266,7 @@
     function renderConversationList() {
       const term = state.search.trim().toLowerCase();
       const rows = state.conversations.filter(convo => {
+        if (Boolean(convo.archived) !== state.showArchived) return false;
         if (!term) return true;
         const titleHit = convo.title.toLowerCase().includes(term);
         const msgHit = convo.messages.some(msg => String(msg.content).toLowerCase().includes(term));
@@ -2014,19 +2278,29 @@
         const count = visibleMessages(convo).length;
         const active = convo.id === state.currentId ? " active" : "";
         const tags = (convo.tags || []).map(tag => `<span class="tag-pill" data-tag-filter="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`).join("");
+        const archiveTitle = convo.archived ? "恢复对话" : "归档对话";
+        const archiveIcon = convo.archived ? "fa-box-open" : "fa-box-archive";
         return `<div class="convo-item${active}">
           <button class="convo-main" data-convo-id="${convo.id}">
             <span class="convo-title">${convo.favorite ? `<i class="fa-solid fa-star" style="color:#d9a21b;margin-right:5px;"></i>` : ""}${escapeHtml(convo.title)}</span>
-            <span class="convo-meta">${count} 条消息</span>
+            <span class="convo-meta">${count} 条消息${convo.archived ? " · 已归档" : ""}</span>
             ${tags ? `<span class="tag-list">${tags}</span>` : ""}
           </button>
           <span class="convo-actions">
             <button class="convo-action ${convo.favorite ? "active" : ""}" data-convo-fav="${convo.id}" title="${convo.favorite ? "取消收藏对话" : "收藏对话"}"><i class="${convo.favorite ? "fa-solid" : "fa-regular"} fa-star"></i></button>
             <button class="convo-action" data-convo-tags="${convo.id}" title="编辑标签"><i class="fa-solid fa-tag"></i></button>
+            <button class="convo-action" data-convo-archive="${convo.id}" title="${archiveTitle}"><i class="fa-solid ${archiveIcon}"></i></button>
             <button class="convo-action danger" data-convo-delete="${convo.id}" title="删除对话"><i class="fa-solid fa-trash"></i></button>
           </span>
         </div>`;
       }).join("");
+      if (!rows.length) {
+        el.conversationList.innerHTML = `<div class="convo-meta" style="padding:14px 4px;">${state.showArchived ? "没有归档对话。" : "没有对话。"}</div>`;
+      }
+      el.archiveFilterBtn.classList.toggle("active", state.showArchived);
+      el.archiveFilterBtn.innerHTML = state.showArchived
+        ? `<i class="fa-solid fa-inbox"></i>查看未归档`
+        : `<i class="fa-solid fa-box-archive"></i>查看归档`;
     }
 
     function renderFavorites() {
@@ -2081,9 +2355,18 @@
       }
       el.chat.innerHTML = messages.map((msg, index) => {
         const roleClass = msg.role === "user" ? "user" : "assistant";
-        const content = msg.role === "assistant" && msg.thinkingSeconds !== undefined
-          ? `<div class="thinking"><i class="fa-regular fa-lightbulb"></i>思考了 ${msg.thinkingSeconds.toFixed(1)}s</div>${escapeHtml(msg.content)}`
-          : escapeHtml(msg.content);
+        let content = escapeHtml(msg.content);
+        if (msg.role === "assistant") {
+          const thinkingLabel = msg.thinkingSeconds !== undefined ? `思考了 ${msg.thinkingSeconds.toFixed(1)}s` : "思考中";
+          if (String(msg.reasoningContent || "").trim()) {
+            content = `<details class="thinking-details">
+              <summary><i class="fa-regular fa-lightbulb"></i>${thinkingLabel}</summary>
+              <div class="thinking-content">${escapeHtml(msg.reasoningContent)}</div>
+            </details>${content}`;
+          } else if (msg.thinkingSeconds !== undefined) {
+            content = `<div class="thinking"><i class="fa-regular fa-lightbulb"></i>${thinkingLabel}</div>${content}`;
+          }
+        }
         const tokens = estimateTokens(msg.content);
         const words = wordCount(msg.content);
         const metaPrefix = msg.role === "assistant" ? `${escapeHtml(modelLabel(msg.model || convo.model || state.settings.model))} · ` : "";
@@ -2179,6 +2462,14 @@
       el.chat.scrollTo({ top: Math.max(0, target.offsetTop - 16), behavior: "smooth" });
     }
 
+    function scrollToMessageIndex(index) {
+      const target = document.getElementById(`msg-${index}`);
+      if (!target) return;
+      el.chat.scrollTo({ top: Math.max(0, target.offsetTop - 18), behavior: "smooth" });
+      target.classList.add("search-hit");
+      setTimeout(() => target.classList.remove("search-hit"), 1800);
+    }
+
     function toast(message) {
       const old = document.querySelector(".toast");
       if (old) old.remove();
@@ -2202,6 +2493,59 @@
       });
       onReady?.(wrapper);
       return wrapper;
+    }
+
+    function searchSnippet(text, term) {
+      const value = String(text || "");
+      const lower = value.toLowerCase();
+      const needle = term.toLowerCase();
+      const hit = lower.indexOf(needle);
+      if (hit < 0) return escapeHtml(value.slice(0, 120));
+      const start = Math.max(0, hit - 48);
+      const end = Math.min(value.length, hit + term.length + 72);
+      const before = value.slice(start, hit);
+      const match = value.slice(hit, hit + term.length);
+      const after = value.slice(hit + term.length, end);
+      return `${start > 0 ? "..." : ""}${escapeHtml(before)}<mark>${escapeHtml(match)}</mark>${escapeHtml(after)}${end < value.length ? "..." : ""}`;
+    }
+
+    function openMessageSearch() {
+      const convo = getCurrentConvo();
+      if (!convo) return;
+      const dialog = modal("搜索当前对话", `<div class="message-search-box">
+        <input class="field" id="messageSearchInput" placeholder="输入关键词">
+        <div class="convo-meta" id="messageSearchCount">输入关键词后显示结果</div>
+        <div class="message-search-results" id="messageSearchResults"></div>
+      </div>`, root => {
+        const input = root.querySelector("#messageSearchInput");
+        const count = root.querySelector("#messageSearchCount");
+        const results = root.querySelector("#messageSearchResults");
+        const update = () => {
+          const term = input.value.trim();
+          if (!term) {
+            count.textContent = "输入关键词后显示结果";
+            results.innerHTML = "";
+            return;
+          }
+          const matches = visibleMessages(convo)
+            .map((msg, index) => ({ msg, index }))
+            .filter(item => String(item.msg.content || "").toLowerCase().includes(term.toLowerCase()));
+          count.textContent = `${matches.length} 个结果`;
+          results.innerHTML = matches.map(item => `<button class="message-search-result" data-search-index="${item.index}">
+            <div class="context-preview-role">${item.index + 1}. ${item.msg.role === "user" ? "User" : "AI"} · ${estimateTokens(item.msg.content)} tokens</div>
+            <div class="message-search-snippet">${searchSnippet(item.msg.content, term)}</div>
+          </button>`).join("") || `<div class="convo-meta">没有找到匹配消息。</div>`;
+        };
+        input.addEventListener("input", update);
+        results.addEventListener("click", event => {
+          const btn = event.target.closest("[data-search-index]");
+          if (!btn) return;
+          const index = Number(btn.dataset.searchIndex);
+          root.remove();
+          setTimeout(() => scrollToMessageIndex(index), 30);
+        });
+      });
+      dialog.querySelector("#messageSearchInput").focus();
     }
 
     function closeMenu() {
@@ -2263,7 +2607,8 @@
         ["world", "世界观设定"],
         ["timeline", "时间线"],
         ["foreshadowing", "伏笔与待回收"],
-        ["style", "文风与禁忌"]
+        ["style", "文风与禁忌"],
+        ["narrative", "叙事规则"]
       ];
       closeMenu();
       const rect = anchor.getBoundingClientRect();
@@ -2317,6 +2662,28 @@
       toast(convo.favorite ? "已收藏对话" : "已取消收藏对话");
     }
 
+    function toggleConversationArchive(id, requireConfirm = false) {
+      const convo = state.conversations.find(item => item.id === id);
+      if (!convo) return;
+      const willArchive = !convo.archived;
+      if (willArchive && requireConfirm && !confirm("归档这个对话？归档后会从默认列表隐藏，可以在“查看归档”里恢复。")) return;
+      convo.archived = willArchive;
+      convo.updatedAt = Date.now();
+      if (willArchive && state.currentId === id) {
+        const next = state.conversations.find(item => !item.archived && item.id !== id);
+        if (next) {
+          state.currentId = next.id;
+        } else {
+          createConversation("新对话", false);
+        }
+        state.showArchived = false;
+      }
+      save();
+      renderAll();
+      syncComposerDraft(true);
+      toast(willArchive ? "已归档对话" : "已恢复对话");
+    }
+
     function deleteConversation(id) {
       const convo = state.conversations.find(item => item.id === id);
       if (!convo) return;
@@ -2325,7 +2692,8 @@
       if (!state.conversations.length) {
         createConversation("新对话", false);
       } else if (state.currentId === id) {
-        state.currentId = state.conversations[0].id;
+        state.currentId = (state.conversations.find(item => !item.archived) || state.conversations[0]).id;
+        state.showArchived = Boolean(state.conversations.find(item => item.id === state.currentId)?.archived);
       }
       save();
       renderAll();
@@ -2352,11 +2720,15 @@
       const convo = getCurrentConvo();
       const favLabel = convo?.favorite ? "取消收藏当前对话" : "收藏当前对话";
       const favIcon = convo?.favorite ? "fa-solid" : "fa-regular";
+      const archiveLabel = convo?.archived ? "恢复当前对话" : "归档当前对话";
+      const archiveIcon = convo?.archived ? "fa-box-open" : "fa-box-archive";
       menu.className = "tool-menu";
       menu.innerHTML = `<button data-top-action="new"><i class="fa-solid fa-plus"></i>新建对话</button>
         <button data-top-action="favorite"><i class="${favIcon} fa-star"></i>${favLabel}</button>
+        <button data-top-action="archive"><i class="fa-solid ${archiveIcon}"></i>${archiveLabel}</button>
         <button data-top-action="tags"><i class="fa-solid fa-tag"></i>编辑当前标签</button>
         <button data-top-action="export"><i class="fa-solid fa-download"></i>导出当前对话</button>
+        <button data-top-action="export-md"><i class="fa-brands fa-markdown"></i>导出 Markdown</button>
         <button data-top-action="import"><i class="fa-solid fa-upload"></i>导入数据</button>
         <button data-top-action="clear"><i class="fa-solid fa-eraser"></i>清空当前对话</button>
         <button data-top-action="delete"><i class="fa-solid fa-trash"></i>删除当前对话</button>
@@ -2370,10 +2742,15 @@
         const action = event.target.closest("button")?.dataset.topAction;
         if (!action) return;
         closeMenu();
-        if (action === "new") createConversation();
+        if (action === "new") {
+          state.showArchived = false;
+          createConversation();
+        }
         if (action === "favorite") toggleConversationFavorite(state.currentId, true);
+        if (action === "archive") toggleConversationArchive(state.currentId, true);
         if (action === "tags") editConversationTags(state.currentId);
         if (action === "export") exportCurrent();
+        if (action === "export-md") exportCurrentMarkdown();
         if (action === "import") importData();
         if (action === "clear") clearCurrentConversation();
         if (action === "delete") deleteConversation(state.currentId);
@@ -2636,6 +3013,70 @@
       return systemMessages.concat(chatMessages.slice(-Number(limit)));
     }
 
+    function contextRoleLabel(role) {
+      return role === "system" ? "System" : role === "assistant" ? "AI" : "User";
+    }
+
+    function clippedPreviewText(text, max = 1600) {
+      const value = String(text || "");
+      return value.length > max ? `${value.slice(0, max)}\n\n...已截断预览，实际发送仍包含完整内容` : value;
+    }
+
+    function showContextPreview() {
+      const convo = getCurrentConvo();
+      if (!convo) return;
+      const draft = el.messageInput.value.trim();
+      const previewConvo = {
+        ...convo,
+        writingNotes: { ...(convo.writingNotes || {}) },
+        writingNoteEnabled: { ...(convo.writingNoteEnabled || {}) },
+        messages: convo.messages.map(msg => ({ ...msg }))
+      };
+      if (draft) {
+        previewConvo.messages.push({ role: "user", content: draft, time: nowTime(), model: state.settings.model });
+      }
+      const messages = buildRequestMessages(previewConvo);
+      const systemCount = messages.filter(msg => msg.role === "system").length;
+      const historyCount = messages.filter(msg => msg.role !== "system").length;
+      const totalTokens = estimateTokens(messages.map(msg => msg.content).join("\n\n"));
+      const noteSections = [
+        ["characters", "角色"],
+        ["world", "世界观"],
+        ["timeline", "时间线"],
+        ["foreshadowing", "伏笔"],
+        ["style", "文风"],
+        ["narrative", "叙事规则"]
+      ];
+      const enabledNotes = noteSections
+        .filter(([key]) => previewConvo.writingNoteEnabled?.[key] !== false && String(previewConvo.writingNotes?.[key] || "").trim())
+        .map(([, label]) => label);
+      const modeNotes = state.settings.mode === "chat"
+        ? "Chat 模式不会自动带入摘要和设定"
+        : `已带入：${[
+          previewConvo.conversationSummary?.trim() ? "摘要" : "",
+          ...enabledNotes
+        ].filter(Boolean).join("、") || "无摘要或设定"}`;
+      const items = messages.map((msg, index) => `<div class="context-preview-item">
+        <div class="context-preview-role">${index + 1}. ${contextRoleLabel(msg.role)} · ${estimateTokens(msg.content)} tokens</div>
+        <div class="context-preview-text">${escapeHtml(clippedPreviewText(msg.content))}</div>
+      </div>`).join("");
+      modal("带入预览", `<div class="context-preview">
+        <div class="context-preview-summary">
+          <div class="context-preview-stat">模式<strong>${escapeHtml(modeLabel(state.settings.mode))}</strong></div>
+          <div class="context-preview-stat">模型<strong>${escapeHtml(modelLabel(state.settings.model))}</strong></div>
+          <div class="context-preview-stat">消息<strong>${systemCount} system · ${historyCount} history</strong></div>
+          <div class="context-preview-stat">估算<strong>${totalTokens} tokens</strong></div>
+        </div>
+        <div class="convo-meta">${escapeHtml(modeNotes)}${draft ? "；包含当前输入框内容" : ""}</div>
+        <div class="context-preview-list">${items || `<div class="convo-meta">没有可发送的上下文。</div>`}</div>
+        <div class="modal-actions">
+          <button class="primary-btn" data-close>关闭</button>
+        </div>
+      </div>`, root => {
+        root.querySelector("[data-close]").addEventListener("click", () => root.remove());
+      });
+    }
+
     function apiConfigHeaders() {
       const endpoint = state.settings.endpoint.trim() || "https://api.deepseek.com/v1/chat/completions";
       const headers = { "Content-Type": "application/json" };
@@ -2770,7 +3211,9 @@
         }
         if (!response.body) {
           const json = await response.json();
-          assistantMsg.content = json.choices?.[0]?.message?.content || "";
+          const message = json.choices?.[0]?.message || {};
+          assistantMsg.content = message.content || "";
+          assistantMsg.reasoningContent = message.reasoning_content || message.reasoningContent || "";
         } else {
           await readStream(response, assistantMsg, convo);
         }
@@ -2831,9 +3274,13 @@
           if (payload === "[DONE]") continue;
           try {
             const parsed = JSON.parse(payload);
-            const delta = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
-            if (!delta) continue;
-            assistantMsg.content += delta;
+            const choice = parsed.choices?.[0] || {};
+            const delta = choice.delta || choice.message || {};
+            const contentDelta = delta.content || "";
+            const reasoningDelta = delta.reasoning_content || delta.reasoningContent || "";
+            if (!contentDelta && !reasoningDelta) continue;
+            if (reasoningDelta) assistantMsg.reasoningContent = (assistantMsg.reasoningContent || "") + reasoningDelta;
+            if (contentDelta) assistantMsg.content += contentDelta;
             save();
             renderMessages();
             renderHeaderAndStats();
@@ -2854,9 +3301,91 @@
       URL.revokeObjectURL(url);
     }
 
+    function exportText(filename, text, type = "text/plain;charset=utf-8") {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function filenameSafe(value) {
+      return String(value || "conversation").replace(/[\\/:*?"<>|]/g, "_").slice(0, 80) || "conversation";
+    }
+
+    function mdSection(title, content) {
+      const value = String(content || "").trim();
+      return value ? `## ${title}\n\n${value}\n\n` : "";
+    }
+
+    function conversationToMarkdown(convo) {
+      const notes = ensureWritingNotes(convo);
+      const lines = [];
+      lines.push(`# ${convo.title || "新对话"}`);
+      lines.push("");
+      lines.push(`- 导出时间：${new Date().toLocaleString("zh-CN")}`);
+      lines.push(`- 模型：${modelLabel(convo.model || state.settings.model)}`);
+      lines.push(`- 模式：${modeLabel(convo.mode || state.settings.mode)}`);
+      if (convo.tags?.length) lines.push(`- 标签：${convo.tags.join("、")}`);
+      if (convo.favorite) lines.push("- 状态：已收藏");
+      if (convo.archived) lines.push("- 状态：已归档");
+      lines.push("");
+      lines.push(mdSection("对话摘要", convo.conversationSummary).trim());
+      const noteParts = [
+        ["角色设定", notes.characters],
+        ["世界观设定", notes.world],
+        ["时间线", notes.timeline],
+        ["伏笔与待回收", notes.foreshadowing],
+        ["文风与禁忌", notes.style],
+        ["叙事规则", notes.narrative]
+      ].filter(([, value]) => String(value || "").trim());
+      if (noteParts.length) {
+        lines.push("## 设定");
+        lines.push("");
+        noteParts.forEach(([title, value]) => {
+          lines.push(`### ${title}`);
+          lines.push("");
+          lines.push(String(value).trim());
+          lines.push("");
+        });
+      }
+      lines.push("## 消息");
+      lines.push("");
+      visibleMessages(convo).forEach(msg => {
+        const role = msg.role === "user" ? "User" : "AI";
+        const meta = [msg.time, msg.model ? modelLabel(msg.model) : ""].filter(Boolean).join(" · ");
+        lines.push(`### ${role}`);
+        if (meta) {
+          lines.push("");
+          lines.push(`_${meta}_`);
+        }
+        lines.push("");
+        if (msg.reasoningContent?.trim()) {
+          lines.push("<details>");
+          lines.push("<summary>思考内容</summary>");
+          lines.push("");
+          lines.push(msg.reasoningContent.trim());
+          lines.push("");
+          lines.push("</details>");
+          lines.push("");
+        }
+        lines.push(String(msg.content || "").trim() || "_空消息_");
+        lines.push("");
+      });
+      return lines.filter((line, index, arr) => !(line === "" && arr[index - 1] === "" && arr[index - 2] === "")).join("\n");
+    }
+
     function exportCurrent() {
       const convo = getCurrentConvo();
       exportJson(`${convo.title || "conversation"}.json`, convo);
+    }
+
+    function exportCurrentMarkdown() {
+      const convo = getCurrentConvo();
+      if (!convo) return;
+      exportText(`${filenameSafe(convo.title)}.md`, `\uFEFF${conversationToMarkdown(convo)}`, "text/markdown;charset=utf-8");
     }
 
     function importData() {
@@ -2869,10 +3398,13 @@
         const data = JSON.parse(await file.text());
         if (Array.isArray(data.conversations)) {
           state.conversations = data.conversations;
+          state.conversations.forEach(convo => {
+            if (!Object.prototype.hasOwnProperty.call(convo, "archived")) convo.archived = false;
+          });
           state.settings = { ...state.settings, ...(data.settings || {}) };
           state.currentId = data.currentId || state.conversations[0]?.id || "";
         } else if (data.messages) {
-          state.conversations.unshift({ ...data, id: uid(), title: `${data.title || "导入对话"} 导入` });
+          state.conversations.unshift({ ...data, id: uid(), title: `${data.title || "导入对话"} 导入`, archived: Boolean(data.archived) });
           state.currentId = state.conversations[0].id;
         }
         save();
@@ -2886,6 +3418,9 @@
       document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
       el.openSidebarBtn.addEventListener("click", toggleSidebar);
       el.collapseSidebarBtn.addEventListener("click", closeSidebar);
+      el.sidebarBackdrop.addEventListener("click", () => {
+        if (window.innerWidth <= 820) closeSidebar();
+      });
       document.addEventListener("click", event => {
         if (!event.target.closest(".tool-menu") && !event.target.closest("[data-action='more']") && !event.target.closest("#moreTopBtn") && !event.target.closest("#modelPill") && !event.target.closest("#modePill") && !event.target.closest("#modeQuickBtn")) closeMenu();
         if (!event.target.closest(".info-popover") && !event.target.closest(".info-btn")) closeInfo();
@@ -2895,10 +3430,15 @@
         showInfo(btn);
       }));
       el.newChatBtn.addEventListener("click", () => {
+        state.showArchived = false;
         createConversation();
       });
       el.searchInput.addEventListener("input", () => {
         state.search = el.searchInput.value;
+        renderConversationList();
+      });
+      el.archiveFilterBtn.addEventListener("click", () => {
+        state.showArchived = !state.showArchived;
         renderConversationList();
       });
       el.conversationList.addEventListener("click", event => {
@@ -2917,6 +3457,11 @@
         const tagBtn = event.target.closest("[data-convo-tags]");
         if (tagBtn) {
           editConversationTags(tagBtn.dataset.convoTags);
+          return;
+        }
+        const archiveBtn = event.target.closest("[data-convo-archive]");
+        if (archiveBtn) {
+          toggleConversationArchive(archiveBtn.dataset.convoArchive, true);
           return;
         }
         const deleteBtn = event.target.closest("[data-convo-delete]");
@@ -3043,9 +3588,7 @@
       el.jumpPrevUserBtn.addEventListener("click", jumpToPrevUserMessage);
       el.jumpBottomBtn.addEventListener("click", jumpToBottom);
       el.searchFocusBtn.addEventListener("click", () => {
-        setTab("chats");
-        openSidebar();
-        setTimeout(() => el.searchInput.focus(), 80);
+        openMessageSearch();
       });
       el.moreTopBtn.addEventListener("click", event => showTopMenu(event.currentTarget));
       el.modeQuickBtn.addEventListener("click", event => showWritingCommandMenu(event.currentTarget));
@@ -3053,6 +3596,7 @@
         setTab("settings");
         openSidebar();
       });
+      el.contextPreviewBtn.addEventListener("click", showContextPreview);
       el.modeButtons.forEach(btn => btn.addEventListener("click", () => setMode(btn.dataset.mode)));
       [
         ["endpointInput", "endpoint"],
