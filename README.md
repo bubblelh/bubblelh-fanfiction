@@ -1,4 +1,5 @@
 # Bubble.lh
+[网页直达](https://bubblelh.github.io/bubblelh-fanfiction/)
 Bubble.lh 是一个单文件前端聊天与写作助手，主要用于日常对话、剧情讨论、长篇创作、设定整理和对话归档。前端可以直接部署到 GitHub Pages，API 请求建议通过 Cloudflare Worker 转发到 DeepSeek，避免把 API Key 暴露在网页源码里。
 
 ## 功能
