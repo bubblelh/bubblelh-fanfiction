@@ -792,14 +792,14 @@
     }
 
     .thinking-content {
-      margin-top: 6px;
-      padding: 8px 10px;
+      margin-top: 5px;
+      padding: 6px 9px;
       border: 1px solid var(--line);
       background: #f7f8f9;
       border-radius: var(--radius);
       color: #5d6672;
       font-size: 13px;
-      line-height: 1.65;
+      line-height: 1.6;
       white-space: pre-wrap;
     }
 
@@ -2375,7 +2375,7 @@
           if (String(msg.reasoningContent || "").trim()) {
             content = `<details class="thinking-details">
               <summary><i class="fa-regular fa-lightbulb"></i>${thinkingLabel}</summary>
-              <div class="thinking-content">${escapeHtml(msg.reasoningContent)}</div>
+              <div class="thinking-content">${escapeHtml(String(msg.reasoningContent || "").trim())}</div>
             </details>${content}`;
           } else if (msg.thinkingSeconds !== undefined) {
             content = `<div class="thinking"><i class="fa-regular fa-lightbulb"></i>${thinkingLabel}</div>${content}`;
