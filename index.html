@@ -1703,8 +1703,8 @@
 
         <div class="setting-group">
           <div class="setting-label">
-            <span class="label-left">云同步<button class="info-btn" data-info="开启后会通过 Cloudflare Worker 的 /sync 接口把对话、设定、收藏、标签和归档状态保存到 D1。API Key 和 Worker Token 不会同步。" title="说明"><i class="fa-solid fa-info"></i></button></span>
-            <label class="note-toggle"><input type="checkbox" id="cloudSyncInput">启用</label>
+            <span class="label-left">云同步<button class="info-btn" data-info="手动按钮可以随时拉取或上传。开启自动同步后，本机内容变化会通过 Cloudflare Worker 的 /sync 接口自动保存到 D1。API Key 和 Worker Token 不会同步。" title="说明"><i class="fa-solid fa-info"></i></button></span>
+            <label class="note-toggle"><input type="checkbox" id="cloudSyncInput">开启自动同步</label>
           </div>
           <div class="row">
             <button class="ghost-btn" id="cloudPullBtn"><i class="fa-solid fa-cloud-arrow-down"></i>拉取云端</button>
@@ -1870,7 +1870,8 @@
         creativePrompt: DEFAULT_CREATIVE_PROMPT,
         contextLimit: 128000,
         contextMessageLimit: 40,
-        cloudSync: false
+        cloudSync: false,
+        lastCloudSyncAt: 0
       },
       search: "",
       showArchived: false
@@ -2016,7 +2017,7 @@
     }
 
     function cloudSafeSettings() {
-      const { apiKey, workerToken, endpoint, ...rest } = state.settings;
+      const { apiKey, workerToken, endpoint, lastCloudSyncAt, ...rest } = state.settings;
       return rest;
     }
 
@@ -2100,6 +2101,17 @@
       return headers;
     }
 
+    async function fetchCloudMeta(url) {
+      const response = await fetch(url, { method: "GET", headers: cloudHeaders() });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    }
+
+    function markCloudSynced(updatedAt) {
+      state.settings.lastCloudSyncAt = Number(updatedAt) || Date.now();
+      localStorage.setItem(STORE_KEY, JSON.stringify(localSnapshot()));
+    }
+
     function scheduleCloudSave() {
       if (!state.settings.cloudSync) return;
       if (!cloudSyncEndpoint()) return;
@@ -2113,7 +2125,8 @@
         endpoint: state.settings.endpoint,
         apiKey: state.settings.apiKey,
         workerToken: state.settings.workerToken,
-        cloudSync: state.settings.cloudSync
+        cloudSync: state.settings.cloudSync,
+        lastCloudSyncAt: state.settings.lastCloudSyncAt
       };
       applyingCloudState = true;
       state.conversations = Array.isArray(data.conversations) ? data.conversations : [];
@@ -2136,15 +2149,14 @@
       if (!url) return toast("请先填写 API Endpoint");
       setCloudStatus("正在拉取云端...");
       try {
-        const response = await fetch(url, { method: "GET", headers: cloudHeaders() });
-        if (!response.ok) throw new Error(await response.text());
-        const result = await response.json();
+        const result = await fetchCloudMeta(url);
         if (!result.data) {
           setCloudStatus("云端暂无数据");
           toast("云端暂无数据");
           return;
         }
         applyCloudState(result.data);
+        markCloudSynced(result.updatedAt);
         setCloudStatus(`已拉取云端 · ${new Date(result.updatedAt || Date.now()).toLocaleString("zh-CN")}`);
         toast("已拉取云端数据");
       } catch (error) {
@@ -2162,6 +2174,20 @@
       }
       if (!silent) setCloudStatus("正在上传本机...");
       try {
+        const remote = await fetchCloudMeta(url);
+        const remoteUpdatedAt = Number(remote.updatedAt) || 0;
+        const localSeenAt = Number(state.settings.lastCloudSyncAt) || 0;
+        if (remote.data && remoteUpdatedAt > localSeenAt + 1000) {
+          if (silent) {
+            setCloudStatus("云端有更新，已暂停自动上传");
+            return;
+          }
+          const shouldContinue = confirm("云端有比本机更新的数据。\n\n如果继续上传，会用当前这台设备的数据覆盖云端。\n要继续吗？");
+          if (!shouldContinue) {
+            setCloudStatus("已取消上传");
+            return;
+          }
+        }
         const response = await fetch(url, {
           method: "POST",
           headers: cloudHeaders(),
@@ -2169,6 +2195,7 @@
         });
         if (!response.ok) throw new Error(await response.text());
         const result = await response.json();
+        markCloudSynced(result.updatedAt);
         setCloudStatus(`已同步 · ${new Date(result.updatedAt || Date.now()).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`);
         if (!silent) toast("已上传本机数据");
       } catch (error) {
@@ -2256,8 +2283,8 @@
       el.apiKeyInput.value = state.settings.apiKey;
       el.workerTokenInput.value = state.settings.workerToken || "";
       el.cloudSyncInput.checked = Boolean(state.settings.cloudSync);
-      if (!state.settings.cloudSync) setCloudStatus("未启用");
-      else if (el.cloudSyncStatus.textContent === "未启用") setCloudStatus("已启用，等待同步");
+      if (!state.settings.cloudSync) setCloudStatus("自动同步未开启，仍可手动上传或拉取");
+      else if (el.cloudSyncStatus.textContent === "未启用" || el.cloudSyncStatus.textContent === "自动同步未开启，仍可手动上传或拉取") setCloudStatus("自动同步已开启，等待同步");
       el.temperatureInput.value = state.settings.temperature;
       el.temperatureValue.textContent = state.settings.temperature;
       el.topPInput.value = state.settings.topP;
@@ -3899,7 +3926,7 @@
       el.cloudSyncInput.addEventListener("change", () => {
         state.settings.cloudSync = el.cloudSyncInput.checked;
         save({ sync: false });
-        setCloudStatus(state.settings.cloudSync ? "已启用：可先上传本机或拉取云端" : "未启用");
+        setCloudStatus(state.settings.cloudSync ? "自动同步已开启：可先上传本机或拉取云端" : "自动同步未开启，仍可手动上传或拉取");
       });
       el.cloudPullBtn.addEventListener("click", pullCloudState);
       el.cloudPushBtn.addEventListener("click", () => pushCloudState({ silent: false }));
