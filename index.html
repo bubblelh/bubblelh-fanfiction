@@ -1795,12 +1795,21 @@
             <span class="label-left">系统提示词<button class="info-btn" data-info="所有对话共用的基本规则。建议控制在 2000 字以内，过长会占用上下文；这里只提醒，不会限制输入。" title="说明"><i class="fa-solid fa-info"></i></button></span>
             <span id="systemPromptCount">0 字</span>
           </div>
-          <textarea class="textarea" id="systemPromptInput" placeholder="所有对话共用的基本规则"></textarea>
+          <div class="note-editor">
+            <textarea class="textarea" id="systemPromptInput" placeholder="所有对话共用的基本规则"></textarea>
+            <div class="note-tools"><button class="note-expand" data-expand-setting="systemPromptInput" data-expand-title="系统提示词" title="全屏编辑"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button></div>
+          </div>
         </div>
 
         <div class="setting-group">
-          <div class="setting-label">Creative 附加规则</div>
-          <textarea class="textarea" id="creativePromptInput" placeholder="只在 Creative 模式自动附加"></textarea>
+          <div class="setting-label">
+            <span>Creative 附加规则</span>
+            <span id="creativePromptCount">0 字</span>
+          </div>
+          <div class="note-editor">
+            <textarea class="textarea" id="creativePromptInput" placeholder="只在 Creative 模式自动附加"></textarea>
+            <div class="note-tools"><button class="note-expand" data-expand-setting="creativePromptInput" data-expand-title="Creative 附加规则" title="全屏编辑"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button></div>
+          </div>
         </div>
 
         <div class="row">
@@ -1942,7 +1951,8 @@
       generateSummaryBtn: document.getElementById("generateSummaryBtn"),
       noteInputs: Array.from(document.querySelectorAll(".writing-note")),
       noteCounts: Array.from(document.querySelectorAll(".note-count")),
-      noteExpandButtons: Array.from(document.querySelectorAll(".note-expand")),
+      noteExpandButtons: Array.from(document.querySelectorAll(".note-expand[data-expand-note]")),
+      settingExpandButtons: Array.from(document.querySelectorAll("[data-expand-setting]")),
       noteContextToggles: Array.from(document.querySelectorAll(".note-context-toggle")),
       messageInput: document.getElementById("messageInput"),
       sendBtn: document.getElementById("sendBtn"),
@@ -1974,6 +1984,7 @@
       systemPromptInput: document.getElementById("systemPromptInput"),
       systemPromptCount: document.getElementById("systemPromptCount"),
       creativePromptInput: document.getElementById("creativePromptInput"),
+      creativePromptCount: document.getElementById("creativePromptCount"),
       contextLimitInput: document.getElementById("contextLimitInput"),
       contextMessageLimitInput: document.getElementById("contextMessageLimitInput"),
       contextMessageLimitValue: document.getElementById("contextMessageLimitValue"),
@@ -2336,6 +2347,7 @@
       el.modePill.innerHTML = `<i class="fa-solid fa-layer-group"></i>${modeLabel(state.settings.mode)}`;
       updateCloudDataSize();
       updateSystemPromptHint();
+      updateCreativePromptHint();
     }
 
     function ensureWritingNotes(convo) {
@@ -2456,6 +2468,36 @@
       dialog.querySelector("#fullscreenComposerText").focus();
     }
 
+    function openSettingFullscreen(inputId, title) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const dialog = modal(title || "全屏编辑", `<textarea class="textarea modal-textarea" id="fullscreenSettingText">${escapeHtml(input.value)}</textarea>
+        <div class="modal-actions">
+          <span class="convo-meta" id="fullscreenSettingCount" style="margin-right:auto;">0 字</span>
+          <button class="ghost-btn" data-close>取消</button>
+          <button class="primary-btn" data-save>保存</button>
+        </div>`, root => {
+        const text = root.querySelector("#fullscreenSettingText");
+        const count = root.querySelector("#fullscreenSettingCount");
+        const updateCount = () => {
+          const length = Array.from(text.value || "").length;
+          count.textContent = `${length} 字`;
+          count.classList.toggle("count-warn", length > 2000 && length <= 4000);
+          count.classList.toggle("count-danger", length > 4000);
+        };
+        text.addEventListener("input", updateCount);
+        updateCount();
+        root.querySelector("[data-close]").addEventListener("click", () => root.remove());
+        root.querySelector("[data-save]").addEventListener("click", () => {
+          input.value = text.value;
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          root.remove();
+          input.focus();
+        });
+      });
+      dialog.querySelector("#fullscreenSettingText").focus();
+    }
+
     function writingNotesPrompt(convo) {
       const notes = ensureWritingNotes(convo);
       const enabled = convo.writingNoteEnabled || {};
@@ -2540,6 +2582,20 @@
         el.systemPromptCount.title = "略长了，建议精简到 2000 字以内；这里只提醒，不会限制输入。";
       } else {
         el.systemPromptCount.title = "建议控制在 2000 字以内，过长会占用上下文；这里只提醒，不会限制输入。";
+      }
+    }
+
+    function updateCreativePromptHint() {
+      const count = Array.from(el.creativePromptInput.value || "").length;
+      el.creativePromptCount.textContent = `${count} 字`;
+      el.creativePromptCount.classList.toggle("count-warn", count > 2000 && count <= 4000);
+      el.creativePromptCount.classList.toggle("count-danger", count > 4000);
+      if (count > 4000) {
+        el.creativePromptCount.title = "已经比较长，会明显占用 Creative 上下文；这里只提醒，不会限制输入。";
+      } else if (count > 2000) {
+        el.creativePromptCount.title = "略长了，建议按需精简到 2000 字以内；这里只提醒，不会限制输入。";
+      } else {
+        el.creativePromptCount.title = "建议控制在 2000 字以内，过长会占用 Creative 上下文；这里只提醒，不会限制输入。";
       }
     }
 
@@ -3893,6 +3949,9 @@
       el.noteExpandButtons.forEach(button => {
         button.addEventListener("click", () => openNoteFullscreen(button.dataset.expandNote));
       });
+      el.settingExpandButtons.forEach(button => {
+        button.addEventListener("click", () => openSettingFullscreen(button.dataset.expandSetting, button.dataset.expandTitle));
+      });
       el.chat.addEventListener("click", event => {
         const btn = event.target.closest("[data-action]");
         if (!btn) return;
@@ -3960,8 +4019,7 @@
       [
         ["endpointInput", "endpoint"],
         ["apiKeyInput", "apiKey"],
-        ["workerTokenInput", "workerToken"],
-        ["creativePromptInput", "creativePrompt"]
+        ["workerTokenInput", "workerToken"]
       ].forEach(([input, key]) => {
         el[input].addEventListener("change", () => {
           state.settings[key] = el[input].value;
@@ -3980,6 +4038,11 @@
       el.systemPromptInput.addEventListener("input", () => {
         state.settings.systemPrompt = el.systemPromptInput.value;
         updateSystemPromptHint();
+        save();
+      });
+      el.creativePromptInput.addEventListener("input", () => {
+        state.settings.creativePrompt = el.creativePromptInput.value;
+        updateCreativePromptHint();
         save();
       });
       el.temperatureInput.addEventListener("change", () => {
