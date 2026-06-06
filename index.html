@@ -741,9 +741,10 @@
     }
 
     .thinking {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 6px;
+      width: fit-content;
       color: #6b7280;
       font-size: 14px;
       font-weight: 600;
@@ -2398,7 +2399,7 @@
           if (String(msg.reasoningContent || "").trim()) {
             content = `<details class="thinking-details"><summary><i class="fa-regular fa-lightbulb"></i>${thinkingLabel}</summary><div class="thinking-content">${escapeHtml(String(msg.reasoningContent || "").trim())}</div></details>${content}`;
           } else if (msg.thinkingSeconds !== undefined) {
-            content = `<div class="thinking"><i class="fa-regular fa-lightbulb"></i>${thinkingLabel}</div>${content}`;
+            content = `<div class="thinking"><i class="fa-regular fa-clock"></i>用时 ${msg.thinkingSeconds.toFixed(1)}s</div>${content}`;
           }
         }
         const tokens = estimateTokens(msg.content);
