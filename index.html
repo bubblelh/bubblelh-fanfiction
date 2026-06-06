@@ -2399,6 +2399,7 @@
         </div>`;
         return;
       }
+      let cumulativeTokens = 0;
       el.chat.innerHTML = messages.map((msg, index) => {
         const roleClass = msg.role === "user" ? "user" : "assistant";
         let content = escapeHtml(msg.content);
@@ -2410,14 +2411,13 @@
             content = `<div class="thinking"><i class="fa-regular fa-clock"></i>用时 ${msg.thinkingSeconds.toFixed(1)}s</div>${content}`;
           }
         }
-        const tokens = estimateTokens(msg.content);
-        const words = wordCount(msg.content);
+        cumulativeTokens += estimateTokens(msg.content);
         const metaPrefix = msg.role === "assistant" ? `${escapeHtml(modelLabel(msg.model || convo.model || state.settings.model))} · ` : "";
         const stopped = msg.stopped ? " · 已停止" : "";
         return `<article class="message ${roleClass}" data-index="${index}" id="msg-${index}">
           <div class="message-body">
             <div class="bubble">${content || `<span style="color: var(--muted)">正在生成...</span>`}</div>
-            <div class="meta">${metaPrefix}${tokens} tokens · ${words} words · ${escapeHtml(msg.time || "")}${stopped}</div>
+            <div class="meta">${metaPrefix}${cumulativeTokens} tokens · ${escapeHtml(msg.time || "")}${stopped}</div>
             ${renderTools(msg.role, index, Boolean(msg.favorite))}
           </div>
         </article>`;
