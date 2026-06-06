@@ -1676,6 +1676,18 @@
 
         <div class="setting-group">
           <div class="setting-label">
+            <span class="label-left">云同步<button class="info-btn" data-info="开启后会通过 Cloudflare Worker 的 /sync 接口把对话、设定、收藏、标签和归档状态保存到 D1。API Key 和 Worker Token 不会同步。" title="说明"><i class="fa-solid fa-info"></i></button></span>
+            <label class="note-toggle"><input type="checkbox" id="cloudSyncInput">启用</label>
+          </div>
+          <div class="row">
+            <button class="ghost-btn" id="cloudPullBtn"><i class="fa-solid fa-cloud-arrow-down"></i>拉取云端</button>
+            <button class="ghost-btn" id="cloudPushBtn"><i class="fa-solid fa-cloud-arrow-up"></i>上传本机</button>
+          </div>
+          <div class="convo-meta" id="cloudSyncStatus" style="margin-top:8px;">未启用</div>
+        </div>
+
+        <div class="setting-group">
+          <div class="setting-label">
             <span class="label-left">上下文消息数量上限<button class="info-btn" data-info="实际生效。0 表示只发送当前这条用户消息，不带历史；不限制表示发送当前对话全部消息。数字越小越省上下文，但越容易丢前文。" title="说明"><i class="fa-solid fa-info"></i></button></span>
             <span id="contextMessageLimitValue">20</span>
           </div>
@@ -1819,7 +1831,8 @@
         systemPrompt: "",
         creativePrompt: DEFAULT_CREATIVE_PROMPT,
         contextLimit: 128000,
-        contextMessageLimit: 40
+        contextMessageLimit: 40,
+        cloudSync: false
       },
       search: "",
       showArchived: false
@@ -1831,6 +1844,8 @@
     let activeAssistantConvo = null;
     let activeMenu = null;
     let activeInfo = null;
+    let cloudSaveTimer = null;
+    let applyingCloudState = false;
 
     const el = {
       body: document.body,
@@ -1870,6 +1885,10 @@
       endpointInput: document.getElementById("endpointInput"),
       apiKeyInput: document.getElementById("apiKeyInput"),
       workerTokenInput: document.getElementById("workerTokenInput"),
+      cloudSyncInput: document.getElementById("cloudSyncInput"),
+      cloudPullBtn: document.getElementById("cloudPullBtn"),
+      cloudPushBtn: document.getElementById("cloudPushBtn"),
+      cloudSyncStatus: document.getElementById("cloudSyncStatus"),
       temperatureInput: document.getElementById("temperatureInput"),
       temperatureValue: document.getElementById("temperatureValue"),
       topPInput: document.getElementById("topPInput"),
@@ -1946,12 +1965,33 @@
       return (convo?.messages || []).filter(msg => msg.role !== "system");
     }
 
-    function save() {
-      localStorage.setItem(STORE_KEY, JSON.stringify({
+    function localSnapshot() {
+      return {
         conversations: state.conversations,
         currentId: state.currentId,
         settings: state.settings
-      }));
+      };
+    }
+
+    function cloudSafeSettings() {
+      const { apiKey, workerToken, endpoint, ...rest } = state.settings;
+      return rest;
+    }
+
+    function cloudSnapshot() {
+      return {
+        version: 2,
+        conversations: state.conversations,
+        currentId: state.currentId,
+        settings: cloudSafeSettings(),
+        updatedAt: Date.now()
+      };
+    }
+
+    function save(options = {}) {
+      const { sync = true } = options;
+      localStorage.setItem(STORE_KEY, JSON.stringify(localSnapshot()));
+      if (sync && !applyingCloudState) scheduleCloudSave();
     }
 
     function load() {
@@ -1971,6 +2011,99 @@
       }
       if (!state.conversations.length) createConversation("新对话", false);
       if (!getCurrentConvo()) state.currentId = state.conversations[0].id;
+    }
+
+    function cloudSyncEndpoint() {
+      const endpoint = state.settings.endpoint.trim();
+      if (!endpoint) return "";
+      return `${endpoint.replace(/\/+$/, "")}/sync`;
+    }
+
+    function setCloudStatus(text) {
+      if (el.cloudSyncStatus) el.cloudSyncStatus.textContent = text;
+    }
+
+    function cloudHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (state.settings.workerToken?.trim()) headers["X-Bubble-Token"] = state.settings.workerToken.trim();
+      return headers;
+    }
+
+    function scheduleCloudSave() {
+      if (!state.settings.cloudSync) return;
+      if (!cloudSyncEndpoint()) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(() => pushCloudState({ silent: true }), 1200);
+    }
+
+    function applyCloudState(data) {
+      if (!data) return false;
+      const localSecrets = {
+        endpoint: state.settings.endpoint,
+        apiKey: state.settings.apiKey,
+        workerToken: state.settings.workerToken,
+        cloudSync: state.settings.cloudSync
+      };
+      applyingCloudState = true;
+      state.conversations = Array.isArray(data.conversations) ? data.conversations : [];
+      state.conversations.forEach(convo => {
+        if (!Object.prototype.hasOwnProperty.call(convo, "archived")) convo.archived = false;
+      });
+      state.currentId = data.currentId || state.conversations[0]?.id || "";
+      state.settings = { ...state.settings, ...(data.settings || {}), ...localSecrets };
+      if (!state.conversations.length) createConversation("新对话", false);
+      if (!getCurrentConvo()) state.currentId = state.conversations[0].id;
+      localStorage.setItem(STORE_KEY, JSON.stringify(localSnapshot()));
+      applyingCloudState = false;
+      renderAll();
+      syncComposerDraft(true);
+      return true;
+    }
+
+    async function pullCloudState() {
+      const url = cloudSyncEndpoint();
+      if (!url) return toast("请先填写 API Endpoint");
+      setCloudStatus("正在拉取云端...");
+      try {
+        const response = await fetch(url, { method: "GET", headers: cloudHeaders() });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        if (!result.data) {
+          setCloudStatus("云端暂无数据");
+          toast("云端暂无数据");
+          return;
+        }
+        applyCloudState(result.data);
+        setCloudStatus(`已拉取云端 · ${new Date(result.updatedAt || Date.now()).toLocaleString("zh-CN")}`);
+        toast("已拉取云端数据");
+      } catch (error) {
+        setCloudStatus(`拉取失败：${error.message}`);
+        toast("云同步拉取失败");
+      }
+    }
+
+    async function pushCloudState(options = {}) {
+      const { silent = false } = options;
+      const url = cloudSyncEndpoint();
+      if (!url) {
+        if (!silent) toast("请先填写 API Endpoint");
+        return;
+      }
+      if (!silent) setCloudStatus("正在上传本机...");
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: cloudHeaders(),
+          body: JSON.stringify({ data: cloudSnapshot() })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        setCloudStatus(`已同步 · ${new Date(result.updatedAt || Date.now()).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`);
+        if (!silent) toast("已上传本机数据");
+      } catch (error) {
+        setCloudStatus(`同步失败：${error.message}`);
+        if (!silent) toast("云同步上传失败");
+      }
     }
 
     function createConversation(title = "新对话", shouldRender = true) {
@@ -2051,6 +2184,9 @@
       el.endpointInput.value = state.settings.endpoint;
       el.apiKeyInput.value = state.settings.apiKey;
       el.workerTokenInput.value = state.settings.workerToken || "";
+      el.cloudSyncInput.checked = Boolean(state.settings.cloudSync);
+      if (!state.settings.cloudSync) setCloudStatus("未启用");
+      else if (el.cloudSyncStatus.textContent === "未启用") setCloudStatus("已启用，等待同步");
       el.temperatureInput.value = state.settings.temperature;
       el.temperatureValue.textContent = state.settings.temperature;
       el.topPInput.value = state.settings.topP;
@@ -3652,6 +3788,13 @@
           save();
         });
       });
+      el.cloudSyncInput.addEventListener("change", () => {
+        state.settings.cloudSync = el.cloudSyncInput.checked;
+        save({ sync: false });
+        setCloudStatus(state.settings.cloudSync ? "已启用：可先上传本机或拉取云端" : "未启用");
+      });
+      el.cloudPullBtn.addEventListener("click", pullCloudState);
+      el.cloudPushBtn.addEventListener("click", () => pushCloudState({ silent: false }));
       el.systemPromptInput.addEventListener("input", () => {
         state.settings.systemPrompt = el.systemPromptInput.value;
         updateSystemPromptHint();
@@ -3690,6 +3833,9 @@
     bindEvents();
     closeSidebar();
     renderAll();
+    if (state.settings.cloudSync) {
+      setTimeout(pullCloudState, 300);
+    }
 
     // ===== Mobile scroll jump tools v2 =====
     const mobileScrollTools = document.getElementById("mobileScrollTools");
